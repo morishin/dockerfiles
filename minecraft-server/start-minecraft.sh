@@ -264,6 +264,9 @@ if [[ "$WORLD" ]]; then
 case "X$WORLD" in
   X[Hh][Tt][Tt][Pp]*)
     echo "Downloading world via HTTP"
+    if [[ ! -z $SLACK_WEBHOOK_URL ]]; then
+      curl -X POST --data-urlencode 'payload={"text": ":arrow_down: Downloading world data..."}' $SLACK_WEBHOOK_URL
+    fi
     echo "$WORLD"
     wget -q -O - "$WORLD" > /data/world.zip
     echo "Unzipping word"
@@ -495,6 +498,11 @@ if [[ ! -z $MAX_MEMORY ]]; then
   # put prior JVM_OPTS at the end to give any memory settings there higher precedence
   JVM_OPTS="-Xms${MAX_MEMORY} -Xmx${MAX_MEMORY} ${JVM_OPTS}"
 fi
+
+if [[ ! -z $SLACK_WEBHOOK_URL ]]; then
+  curl -X POST --data-urlencode 'payload={"text": ":white_check_mark: Launched Minecraft server successfully. You can connect to server."}' $SLACK_WEBHOOK_URL
+fi
+
 set -x
 if [[ ${TYPE} == "FEED-THE-BEAST" ]]; then
     echo "Running FTB server modpack start ..."

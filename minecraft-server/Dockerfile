@@ -13,6 +13,7 @@ RUN echo "http://dl-3.alpinelinux.org/alpine/v3.5/community/" >> /etc/apk/reposi
           su-exec \
           bash \
           git \
+          curl \
           jq &&\
         rm -rf /var/cache/apk/*
 
@@ -42,4 +43,5 @@ ENV UID=1000 GID=1000 \
     MOTD="A Minecraft Server Powered by Docker" \
     JVM_XX_OPTS="-XX:+UseG1GC" MAX_MEMORY="1G" \
     TYPE=VANILLA VERSION=LATEST FORGEVERSION=RECOMMENDED LEVEL=world PVP=true DIFFICULTY=easy \
-    LEVEL_TYPE=DEFAULT GENERATOR_SETTINGS= WORLD= MODPACK= ONLINE_MODE=TRUE CONSOLE=true
+    LEVEL_TYPE=DEFAULT GENERATOR_SETTINGS= WORLD= MODPACK= ONLINE_MODE=TRUE CONSOLE=true \
+    SLACK_WEBHOOK_URL=
