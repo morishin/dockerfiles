@@ -1,6 +1,7 @@
 
 [![Docker Pulls](https://img.shields.io/docker/pulls/itzg/minecraft-server.svg)](https://hub.docker.com/r/itzg/minecraft-server/)
 [![Docker Stars](https://img.shields.io/docker/stars/itzg/minecraft-server.svg?maxAge=2592000)](https://hub.docker.com/r/itzg/minecraft-server/)
+[![GitHub Issues](https://img.shields.io/github/issues-raw/itzg/dockerfiles.svg)](https://github.com/itzg/dockerfiles/issues)
 
 This docker image provides a Minecraft Server that will automatically download the latest stable
 version at startup. You can also run/upgrade to any specific version or the
@@ -89,17 +90,6 @@ to map a directory on your host machine to the container's `/data` directory, su
 
 When attached in this way you can stop the server, edit the configuration under your attached `/path/on/host`
 and start the server again with `docker start CONTAINERID` to pick up the new configuration.
-
-**NOTE**: By default, the files in the attached directory will be owned by the host user with UID of 1000 and host group with GID of 1000.
-You can use an different UID and GID by passing the options:
-
-    -e UID=1000 -e GID=1000
-
-replacing 1000 with a UID and GID that is present on the host.
-Here is one way to find the UID and GID:
-
-    id some_host_user
-    getent group some_host_group
 
 ## Versions
 
@@ -397,6 +387,31 @@ example:
 Note: The FTB server start script will also override other options,
 like `MOTD`.
 
+### Fixing "unable to launch forgemodloader"
+
+If your server's modpack fails to load with an error [like this](https://support.feed-the-beast.com/t/cant-start-crashlanding-server-unable-to-launch-forgemodloader/6028/2):
+
+    unable to launch forgemodloader
+     
+then you apply a workaround by adding this to the run invocation:
+
+    -e FTB_LEGACYJAVAFIXER=true
+
+## Running a SpongeVanilla server
+
+Enable SpongeVanilla server mode by adding a `-e TYPE=SPONGEVANILLA` to your command-line.
+By default the container will run the latest `STABLE` version.
+If you want to run a specific version, you can add `-e SPONGEVERSION=1.11.2-6.1.0-BETA-19` to your command-line.
+
+    docker run -d -v /path/on/host:/data -e TYPE=SPONGEVANILLA \
+        -p 25565:25565 -e EULA=TRUE --name mc itzg/minecraft-server
+	
+You can also choose to use the `EXPERIMENTAL` branch. 
+Just change it with `SPONGEBRANCH`, such as:
+
+    $ docker run -d -v /path/on/host:/data ... \
+        -e TYPE=SPONGEVANILLA -e SPONGEBRANCH=EXPERIMENTAL ...
+
 ## Using Docker Compose
 
 Rather than type the server options below, the port mappings above, etc
@@ -429,6 +444,11 @@ Now, go play...or adjust the  `environment` section to configure
 this server instance.    
 
 ## Server configuration
+
+### Server port
+
+The server port can be set like:
+    docker run -d -e SERVER_PORT=25565 ...
 
 ### Difficulty
 
@@ -531,6 +551,12 @@ If set to true, players will be set to spectator mode if they die.
 
     docker run -d -e HARDCORE=false
 
+### Snooper
+
+If set to false, the server will not send data to snoop.minecraft.net server.
+
+    docker run -d -e SNOOPER_ENABLED=false
+
 ### Max Build Height
 
 The maximum height in which building is allowed.
@@ -597,8 +623,14 @@ The message of the day, shown below each server entry in the UI, can be changed 
 
     docker run -d -e 'MOTD=My Server' ...
 
-If you leave it off, the last used or default message will be used. _The example shows how to specify a server
-message of the day that contains spaces by putting quotes around the whole thing._
+If you leave it off, a default is computed from the server type and version, such as
+
+    A Paper Minecraft Server powered by Docker
+    
+when `TYPE` is `PAPER`. That way you can easily differentiate between several servers you may have started.
+
+_The example shows how to specify a server message of the day that contains spaces by putting quotes 
+around the whole thing._
 
 ### PVP Mode
 
@@ -672,11 +704,31 @@ To use this option pass the environment variable `MODPACK`, such as
 top level of the zip archive. Make sure the jars are compatible with the
 particular `TYPE` of server you are running.
 
+### Remove old mods/plugins
+
+When the option above is specified (`MODPACK`) you can also instruct script to
+delete old mods/plugins prior to installing new ones. This behaviour is desirable
+in case you want to upgrade mods/plugins from downloaded zip file.
+To use this option pass the environment variable `REMOVE_OLD_MODS="TRUE"`, such as
+
+    docker run -d -e REMOVE_OLD_MODS="TRUE" -e MODPACK=http://www.example.com/mods/modpack.zip ...
+
+**NOTE:** This option will be taken into account only when option `MODPACK` is also used.
+
+**WARNING:** All content of the `mods` or `plugins` directory will be deleted
+before unpacking new content from the zip file.
+
 ### Online mode
 
 By default, server checks connecting players against Minecraft's account database. If you want to create an offline server or your server is not connected to the internet, you can disable the server to try connecting to minecraft.net to authenticate players with environment variable `ONLINE_MODE`, like this
 
     docker run -d -e ONLINE_MODE=FALSE ...
+
+### Allow flight
+
+Allows users to use flight on your server while in Survival mode, if they have a mod that provides flight installed.
+
+    -e ALLOW_FLIGHT=TRUE|FALSE
 
 ## Miscellaneous Options
 
@@ -693,6 +745,16 @@ ways to adjust the memory settings:
 The values of all three are passed directly to the JVM and support format/units as
 `<size>[g|G|m|M|k|K]`.
 
-### /data ownership
+### JVM Options
 
-In order to adapt to differences in `UID` and `GID` settings the entry script will attempt to correct ownership and writability of the `/data` directory. This logic can be disabled by setting `-e SKIP_OWNERSHIP_FIX=TRUE`.
+General JVM options can be passed to the Minecraft Server invocation by passing a `JVM_OPTS`
+environment variable. Options like `-X` that need to proceed general JVM options can be passed
+via a `JVM_XX_OPTS` environment variable.
+
+### HTTP Proxy
+
+You may configure the use of an HTTP/HTTPS proxy by passing the proxy's URL via the `PROXY`
+environment variable. In [the example compose file](docker-compose-proxied.yml) it references 
+a companion squid proxy by setting the equivalent of
+
+    -e PROXY=proxy:3128
