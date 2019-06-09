@@ -11,6 +11,9 @@ if [[ "$WORLD" ]] && [ ! -d "$worldDest" ]; then
 case "X$WORLD" in
   X[Hh][Tt][Tt][Pp]*)
     echo "Downloading world from $WORLD"
+    if [[ ! -z $SLACK_WEBHOOK_URL ]]; then
+      curl -X POST --data-urlencode 'payload={"text": ":arrow_down: Downloading world data..."}' $SLACK_WEBHOOK_URL
+    fi
     curl -sSL -o - "$WORLD" > /data/world.zip
     echo "Unzipping world"
     unzip -o -q /data/world.zip

@@ -86,6 +86,10 @@ fi
 
 mcServerRunnerArgs="--stop-duration 60s"
 
+if [[ ! -z $SLACK_WEBHOOK_URL ]]; then
+  curl -X POST --data-urlencode 'payload={"text": ":white_check_mark: Launched Minecraft server successfully. You can connect to server."}' $SLACK_WEBHOOK_URL
+fi
+
 if [[ ${TYPE} == "FEED-THE-BEAST" ]]; then
     if [ ! -e "${FTB_DIR}/ops.json" -a -e /data/ops.txt ]; then
       cp -f /data/ops.txt ${FTB_DIR}/
